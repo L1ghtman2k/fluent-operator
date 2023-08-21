@@ -38,4 +38,4 @@ jobs:
       - name: Build and Push Image for Fluent Operator
         run: |
           tag=$(cat VERSION | tr -d " \t\n\r")
-          make build-op -e FO_IMG=ghcr.io/${{ github.repository }}/fluent-operator:$tag
+          make build-op -e FO_IMG=ghcr.io/l1ghtman2k/fluent-operator:$tag
