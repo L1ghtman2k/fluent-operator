@@ -10,6 +10,9 @@ spec:
 {{- if .Values.fluentbit.hostNetwork }}
   hostNetwork: {{ .Values.fluentbit.hostNetwork }}
 {{- end }}
+{{- if .Values.fluentbit.dnsPolicy }}
+  dnsPolicy: {{ .Values.fluentbit.dnsPolicy }}
+{{- end }}
   image: {{ .Values.fluentbit.image.repository }}:{{ .Values.fluentbit.image.tag }}
   {{- if .Values.fluentbit.imagePullSecrets }}
   imagePullSecrets:
@@ -79,6 +82,10 @@ spec:
   {{- if .Values.fluentbit.podSecurityContext }}
   securityContext:
 {{ toYaml .Values.fluentbit.podSecurityContext | nindent 4 }}
+  {{- end }}
+  {{- if .Values.fluentbit.serviceAccountAnnotations }}
+  serviceAccountAnnotations:
+{{ toYaml .Values.fluentbit.serviceAccountAnnotations | indent 4 }}
   {{- end }}
 {{- end }}
 {{- end }}

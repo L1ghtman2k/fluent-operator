@@ -38,6 +38,7 @@ This Document documents the types introduced by the fluentbit Operator.
 * [ParserSpec](#parserspec)
 * [Script](#script)
 * [Service](#service)
+* [Storage](#storage)
 # ClusterFilter
 
 ClusterFilter defines a cluster-level Filter configuration.
@@ -383,6 +384,7 @@ FluentBitSpec defines the desired state of FluentBit
 | priorityClassName | PriorityClassName represents the pod's priority class. | string |
 | volumes | List of volumes that can be mounted by containers belonging to the pod. | []corev1.Volume |
 | volumesMounts | Pod volumes to mount into the container's filesystem. | []corev1.VolumeMount |
+| disableLogVolumes | DisableLogVolumes removes the hostPath mounts for varlibcontainers, varlogs and systemd. | bool |
 | annotations | Annotations to add to each Fluentbit pod. | map[string]string |
 | serviceAccountAnnotations | Annotations to add to the Fluentbit service account | map[string]string |
 | labels | Labels to add to each FluentBit pod | map[string]string |
@@ -417,6 +419,15 @@ InputSpec defines the desired state of ClusterInput
 | prometheusScrapeMetrics | PrometheusScrapeMetrics  defines Prometheus Scrape Metrics Input configuration. | *[input.PrometheusScrapeMetrics](plugins/input/prometheusscrapemetrics.md) |
 | fluentBitMetrics | FluentBitMetrics defines Fluent Bit Metrics Input configuration. | *[input.FluentbitMetrics](plugins/input/fluentbitmetrics.md) |
 | customPlugin | CustomPlugin defines Custom Input configuration. | *custom.CustomPlugin |
+| forward | Forward defines forward  input plugin configuration | *[input.Forward](plugins/input/forward.md) |
+| openTelemetry | OpenTelemetry defines the OpenTelemetry input plugin configuration | *[input.OpenTelemetry](plugins/input/opentelemetry.md) |
+| http | HTTP defines the HTTP input plugin configuration | *[input.HTTP](plugins/input/http.md) |
+| mqtt | MQTT defines the MQTT input plugin configuration | *[input.MQTT](plugins/input/mqtt.md) |
+| collectd | Collectd defines the Collectd input plugin configuration | *[input.Collectd](plugins/input/collectd.md) |
+| statsd | StatsD defines the StatsD input plugin configuration | *[input.StatsD](plugins/input/statsd.md) |
+| nginx | Nginx defines the Nginx input plugin configuration | *[input.Nginx](plugins/input/nginx.md) |
+| syslog | Syslog defines the Syslog input plugin configuration | *[input.Syslog](plugins/input/syslog.md) |
+| tcp | TCP defines the TCP input plugin configuration | *[input.TCP](plugins/input/tcp.md) |
 
 [Back to TOC](#table-of-contents)
 # NamespacedFluentBitCfgSpec
@@ -487,8 +498,10 @@ OutputSpec defines the desired state of ClusterOutput
 | splunk | Splunk defines Splunk Output Configuration | *[output.Splunk](plugins/output/splunk.md) |
 | opensearch | OpenSearch defines OpenSearch Output configuration. | *[output.OpenSearch](plugins/output/opensearch.md) |
 | opentelemetry | OpenTelemetry defines OpenTelemetry Output configuration. | *[output.OpenTelemetry](plugins/output/opentelemetry.md) |
+| prometheusExporter | PrometheusExporter_types defines Prometheus exporter configuration to expose metrics from Fluent Bit. | *[output.PrometheusExporter](plugins/output/prometheusexporter.md) |
 | prometheusRemoteWrite | PrometheusRemoteWrite_types defines Prometheus Remote Write configuration. | *[output.PrometheusRemoteWrite](plugins/output/prometheusremotewrite.md) |
 | s3 | S3 defines S3 Output configuration. | *[output.S3](plugins/output/s3.md) |
+| gelf | Gelf defines GELF Output configuration. | *[output.Gelf](plugins/output/gelf.md) |
 | customPlugin | CustomPlugin defines Custom Output configuration. | *custom.CustomPlugin |
 
 [Back to TOC](#table-of-contents)
@@ -559,5 +572,22 @@ ParserSpec defines the desired state of ClusterParser
 | logFile | File to log diagnostic output | string |
 | logLevel | Diagnostic level (error/warning/info/debug/trace) | string |
 | parsersFile | Optional 'parsers' config file (can be multiple) | string |
+| storage | Configure a global environment for the storage layer in Service. It is recommended to configure the volume and volumeMount separately for this storage. The hostPath type should be used for that Volume in Fluentbit daemon set. | *Storage |
+
+[Back to TOC](#table-of-contents)
+# Storage
+
+
+
+
+| Field | Description | Scheme |
+| ----- | ----------- | ------ |
+| path | Select an optional location in the file system to store streams and chunks of data/ | string |
+| sync | Configure the synchronization mode used to store the data into the file system | string |
+| checksum | Enable the data integrity check when writing and reading data from the filesystem | string |
+| backlogMemLimit | This option configure a hint of maximum value of memory to use when processing these records | string |
+| maxChunksUp | If the input plugin has enabled filesystem storage type, this property sets the maximum number of Chunks that can be up in memory | *int64 |
+| metrics | If http_server option has been enabled in the Service section, this option registers a new endpoint where internal metrics of the storage layer can be consumed | string |
+| deleteIrrecoverableChunks | When enabled, irrecoverable chunks will be deleted during runtime, and any other irrecoverable chunk located in the configured storage path directory will be deleted when Fluent-Bit starts. | string |
 
 [Back to TOC](#table-of-contents)

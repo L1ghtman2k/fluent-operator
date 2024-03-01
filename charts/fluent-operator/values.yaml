@@ -71,7 +71,7 @@ fluentbit:
   enable: true
   image:
     repository: "kubesphere/fluent-bit"
-    tag: "v2.1.8"
+    tag: "v2.2.2"
   # fluentbit resources. If you do want to specify resources, adjust them as necessary
   # You can adjust it based on the log volume.
   resources:
@@ -91,14 +91,18 @@ fluentbit:
   # Specify additional custom labels for fluentbit-pods
   labels: {}
 
+  # Specify additional custom annotations for fluentbit-serviceaccount
+  serviceAccountAnnotations: {}
+
   ## Reference to one or more secrets to be used when pulling images
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
   ##
   imagePullSecrets: []
   # - name: "image-pull-secret"
+  logLevel: ""
   secrets: []
   # fluent-bit daemonset use host network
-  hostNetwork: false 
+  hostNetwork: false
   # Pod security context for Fluent Bit pods. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   podSecurityContext: {}
   # Security context for Fluent Bit container. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -168,6 +172,7 @@ fluentbit:
       enable: true
       refreshIntervalSeconds: 10
       memBufLimit: 100MB
+      bufferMaxSize: ""
       path: "/var/log/containers/*.log"
       skipLongLines: true
       readFromHead: false
@@ -248,6 +253,51 @@ fluentbit:
 #        port: 2020
 #        addLabels:
 #          app: "fluentbit"
+    
+    # Loki fluentbit ClusterOutput, to be encapsulated in fluentbit config
+    # See https://github.com/fluent/fluent-operator/blob/master/docs/plugins/fluentbit/output/loki.md
+    # See https://docs.fluentbit.io/manual/pipeline/outputs/loki
+    loki:
+      # Switch for generation of fluentbit loki ClusterOutput (and loki basic auth http user and pass secrets if required)
+      enable: false   # Bool
+      host: 127.0.0.1 # String
+      port: 3100      # Int
+      # Either, give http{User,Password},tenantID string values specifying them directly
+      httpUser: myuser
+      httpPassword: mypass
+      tenantID: ''
+      # Or give {http{User,Password},tenantID} as reference to secrets that you have manually installed into your kubernetes cluster
+      #httpUser:
+      #  valueFrom:
+      #    secretKeyRef:
+      #      key: value
+      #      name: husersecret
+      #      optional: true
+      #httpPassword:
+      #  valueFrom:
+      #    secretKeyRef:
+      #      key: value
+      #      name: hpasssecret
+      #      optional: true
+      #tenantID:
+      #  valueFrom:
+      #    secretKeyRef:
+      #      key: value
+      #      name: tenantsecret
+      #      optional: true
+      #
+      #labels: []      # String list of <name>=<value>
+      #labelKeys: []   # String list of <key>
+      #removeKeys: []  # String list of <key> 
+      #labelMapPath: '' # String, path to file, ex /here/it/is
+      #dropSingleKey: off
+      #lineFormat: '' # String
+      #autoKubernetesLabels: on
+      #tenantIDKey:   # String
+      #tls: {}        # *plugins.TLS fluentbit docs
+    stackdriver: {}
+    # You can configure the stackdriver configuration here
+
   service:
     storage: {}
 # Remove the above storage section and uncomment below section if you want to configure file-system as storage for buffer
@@ -312,7 +362,17 @@ fluentd:
       cpu: 100m
       memory: 128Mi
   schedulerName: ""
+  # Environment variables that can be passed to fluentd pods
+  envVars: []
+  #  - name: FOO
+  #    value: "bar"
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+  # - name: "image-pull-secret"
   logLevel: ""
+  priorityClassName: ""
+  extras: {}
   # Configure the output plugin parameter in Fluentd.
   # Fluentd is disabled by default, if you enable it make sure to also set up an output to use.
   output:

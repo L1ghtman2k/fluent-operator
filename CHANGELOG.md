@@ -1,3 +1,98 @@
+## 2.7.0 / 2023-12-19
+### Features
+- Feat: Add copy output plugin for fluentd #1017 (#1018) @antrema
+
+### ENHANCEMENT
+- Update fluentd-filter-kafka.yaml (#1016) @blackshy
+- build(deps): Bump alpine in /cmd/fluent-watcher/fluentd (#1014) @dependabot
+- build(deps): Bump golang in /cmd/fluent-manager (#1009) @dependabot
+- build(deps): Bump helm/chart-testing-action from 2.6.0 to 2.6.1 (#1006) @dependabot
+- build(deps): Bump golang in /docs/best-practice/forwarding-logs-via-http (#1004) @dependabot
+- build(deps): Bump github.com/onsi/gomega from 1.28.0 to 1.30.0 (#1002) @dependabot
+
+### BUGFIX 
+- fix: Add SSL/TLS settings feature for fluentd output Elasticsearch #418 (#1011) @antrema
+- fix: Add RBAC permissions for input and clusterinput (#1019) @MisterMX
+- fix: missing CRD entries and documentation #1020 (#1022) @antrema
+
+## 2.6.0 / 2023-11-22
+### Features
+- Feat: Add fluentbit nginx  plugin (#924) 
+- Feat: Add fluentbit statsd plugin (#925) 
+- Feat: Add fluentbit syslog plugin (#931)
+- Feat: Add fluentbit tcp plugin (#936)
+- Feat: Add in_sample plugin to fluentd to facilitate tests. (#937) 
+- Feat: Adds the fluent-plugin-prometheus plugin to fluentd. (#966)
+- Feat: Adds fluentd monitor_agent input plugin (#967) 
+- Feat(fluentd): Input plugin CRs (#972) 
+- Feat: Add readiness & liveness probe for fluentd (#980)
+
+### ENHANCEMENT
+- Add fluentbit daemonset hostPath toggle (#926) 
+- Allow setting dnsPolicy for fluentbit (#951) 
+- Default cri parser should contain Time_Keep On, otherwise no time tag exists at output (#958) 
+- Chore: Replace deprecated command with environment file (#970)
+- Upgrade chart-testing-action to v2.6.0 (#976) 
+- Allow passing env vars using the chart (#977) 
+- Sort custom resources by metadata.name (#988) 
+- Bump fluentbit to 2.2.0 (#994)
+- build(deps): Bump docker/login-action from 2 to 3 (#939) 
+- build(deps): Bump actions/checkout from 3 to 4 (#940) 
+- build(deps): Bump docker/setup-buildx-action from 2 to 3 (#941) 
+- build(deps): Bump github.com/onsi/gomega from 1.27.10 to 1.28.0 (#944) 
+- build(deps): Bump golang from 1.21.1-alpine3.17 to 1.21.2-alpine3.17 in /cmd/fluent-manager (#950) 
+- build(deps): Bump golang from 1.21.2-alpine3.17 to 1.21.3-alpine3.17 in /cmd/fluent-manager (#953) 
+- build(deps): Bump golang.org/x/net from 0.14.0 to 0.17.0 (#954) 
+- build(deps): Bump github.com/fsnotify/fsnotify from 1.6.0 to 1.7.0 (#981) 
+- build(deps): Bump golang from 1.21.1 to 1.21.3 in /docs/best-practice/forwarding-logs-via-http (#974) 
+- build(deps): Bump golang from 1.21.3-alpine3.17 to 1.21.4-alpine3.17 in /cmd/fluent-manager (#983) 
+- build(deps): Bump github.com/go-logr/logr from 1.2.4 to 1.3.0 (#989)
+
+### BUGFIX 
+- Fix(doc): Fluentbit splunk output docs (#935) @Macbet
+- Fix: Add parserSelector to clusterFluentBitConfig chart templates (#956) 
+- Fix: fd record transformer parameters (#960)
+- Fix: fluentd in_http plugin keepalive_timeout option (#968) 
+- Fix: fluentd parser keep_time_key (#987) 
+
+## 2.5.0 / 2023-09-13
+### Features
+- Feat: add support to run Fluentd as a DaemonSet (#839)
+- Feat: Add Prometheus exporter output plugin for Fluent Bit (#840)
+- Feat: Add Fluent Bit forward input plugin (#843)
+- Feat: support fluentd grok parser plugin (#861) 
+- Feat: add gelf output plugin to fluentbit (#882) 
+- Feat: add fluentbit opentelemetry plugin (#890) 
+- Feat: Add serviceAccount Annotations to FluentBit resource (#898) 
+- Feat: Add Helm priorityClassName mapping to Fluentd (#902) 
+- Feat: add fluentbit http plugin (#904) 
+- Feat: add fluentbit mqtt plugin (#911) 
+- Feat: add fluentbit collectd plugin (#914) 
+
+### ENHANCEMENT
+- Remove Duplicate Cluster parsers in Fluent-bit config. (#853) 
+- Add option to configure hostNetwork daemonset propertie (#863)
+- Helm chart generation of ClusterOutput for loki (#865) (#906)
+- Add SuppressTypeName option to helm, as newer ES needs it for bulk operation (#869) 
+- Adjusting the parameters of fluentbit (#880) @wenchajun
+- Add an extras section to the chart allowing new and less used features of the CRD to be used from the chart (#889)
+- Add ImagePullSecret for fluentd (#891) 
+- Add compress in fluentbit output es (#899)
+- Expose ports on collector statefulset (#917) 
+- Bump fluentbit to 2.1.9 (#921) 
+- build(deps): Bump github.com/onsi/gomega from 1.27.8 to 1.27.10 (#844) 
+- build(deps): Bump k8s.io/apimachinery from 0.27.3 to 0.27.4 (#847) 
+- build(deps): Bump helm/kind-action from 1.7.0 to 1.8.0 (#859) 
+- build(deps): Bump golang from 1.20.6-alpine3.17 to 1.20.7-alpine3.17 in /cmd/fluent-manager (#860) 
+- build(deps): Bump github.com/go-kit/kit from 0.12.0 to 0.13.0 (#896) 
+- build(deps): Bump golang from 1.20.7-alpine3.17 to 1.21.1-alpine3.17 in /cmd/fluent-manager (#913) 
+
+### BUGFIX 
+- Fix: Fluentd's s3 output plugin is compatible with minio (#858) 
+- Fix: add hostNetwork option (#866) 
+- Fix azure blob name & boolean parameters. (#887) 
+- Fix: fluentd watchedNamespaces Helm mapping (#901) 
+
 ## 2.4.0 / 2023-07-19
 ### Features
 - Feat: add scheduler support for fluentbit collector (#776)

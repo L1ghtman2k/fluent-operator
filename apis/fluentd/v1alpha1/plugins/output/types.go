@@ -10,7 +10,6 @@ import (
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/common"
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/custom"
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/params"
-	"github.com/fluent/fluent-operator/v2/pkg/utils"
 )
 
 // OutputCommon defines the common parameters for output plugin
@@ -51,6 +50,8 @@ type Output struct {
 	CloudWatch *CloudWatch `json:"cloudWatch,omitempty"`
 	// datadog plugin
 	Datadog *Datadog `json:"datadog,omitempty"`
+	// copy plugin
+	Copy *Copy `json:"copy,omitempty"`
 }
 
 // DeepCopyInto implements the DeepCopyInto interface.
@@ -163,6 +164,12 @@ func (o *Output) Params(loader plugins.SecretLoader) (*params.PluginStore, error
 		ps.InsertType(string(params.DatadogOutputType))
 		return o.datadogPlugin(ps, loader), nil
 	}
+
+	if o.Copy != nil {
+		ps.InsertType(string(params.CopyOutputType))
+		return o.copyPlugin(ps, loader), nil
+	}
+
 	return o.customOutput(ps, loader), nil
 
 }
@@ -405,6 +412,30 @@ func (o *Output) elasticsearchPlugin(parent *params.PluginStore, loader plugins.
 		parent.InsertPairs("password", pwd)
 	}
 
+	if o.Elasticsearch.SslVerify != nil {
+		parent.InsertPairs("ssl_verify", fmt.Sprint(*o.Elasticsearch.SslVerify))
+	}
+
+	if o.Elasticsearch.CAFile != nil {
+		parent.InsertPairs("ca_file", fmt.Sprint(*o.Elasticsearch.CAFile))
+	}
+
+	if o.Elasticsearch.ClientCert != nil {
+		parent.InsertPairs("client_cert", fmt.Sprint(*o.Elasticsearch.ClientCert))
+	}
+
+	if o.Elasticsearch.ClientKey != nil {
+		parent.InsertPairs("client_key", fmt.Sprint(*o.Elasticsearch.ClientKey))
+	}
+
+	if o.Elasticsearch.ClientKeyPassword != nil {
+		pwd, err := loader.LoadSecret(*o.Elasticsearch.ClientKeyPassword)
+		if err != nil {
+			return nil, err
+		}
+		parent.InsertPairs("client_key_pass", pwd)
+	}
+
 	if o.Elasticsearch.Scheme != nil {
 		parent.InsertPairs("scheme", fmt.Sprint(*o.Elasticsearch.Scheme))
 	}
@@ -540,6 +571,21 @@ func (o *Output) s3Plugin(parent *params.PluginStore, loader plugins.SecretLoade
 	if o.S3.SslVerifyPeer != nil {
 		parent.InsertPairs("ssl_verify_peer", fmt.Sprint(*o.S3.SslVerifyPeer))
 	}
+	if o.S3.UseServerSideEncryption != nil {
+		parent.InsertPairs("use_server_side_encryption", fmt.Sprint(*o.S3.UseServerSideEncryption))
+	}
+	if o.S3.SseCustomerAlgorithm != nil {
+		parent.InsertPairs("sse_customer_algorithm", fmt.Sprint(*o.S3.SseCustomerAlgorithm))
+	}
+	if o.S3.SsekmsKeyId != nil {
+		parent.InsertPairs("ssekms_key_id", fmt.Sprint(*o.S3.SsekmsKeyId))
+	}
+	if o.S3.SseCustomerKey != nil {
+		parent.InsertPairs("sse_customer_key", fmt.Sprint(*o.S3.SseCustomerKey))
+	}
+	if o.S3.SseCustomerKeyMd5 != nil {
+		parent.InsertPairs("sse_customer_key_md5", fmt.Sprint(*o.S3.SseCustomerKeyMd5))
+	}
 	return parent
 }
 
@@ -587,7 +633,7 @@ func (o *Output) lokiPlugin(parent *params.PluginStore, loader plugins.SecretLoa
 		}
 	}
 	if o.Loki.RemoveKeys != nil && len(o.Loki.RemoveKeys) > 0 {
-		parent.InsertPairs("remove_keys", utils.ConcatString(o.Loki.RemoveKeys, ","))
+		parent.InsertPairs("remove_keys", strings.Join(o.Loki.RemoveKeys, ","))
 	}
 	if o.Loki.LabelKeys != nil && len(o.Loki.LabelKeys) > 0 {
 		ps := params.NewPluginStore("label")
@@ -879,6 +925,13 @@ func (o *Output) datadogPlugin(parent *params.PluginStore, sl plugins.SecretLoad
 
 	if o.Datadog.HttpProxy != nil {
 		parent.InsertPairs("http_proxy", fmt.Sprint(*o.Datadog.HttpProxy))
+	}
+	return parent
+}
+
+func (o *Output) copyPlugin(parent *params.PluginStore, sl plugins.SecretLoader) *params.PluginStore {
+	if o.Copy.CopyMode != nil {
+		parent.InsertPairs("copy_mode", fmt.Sprint(*o.Copy.CopyMode))
 	}
 	return parent
 }

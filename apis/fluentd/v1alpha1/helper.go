@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins"
@@ -36,10 +37,12 @@ type PluginResources struct {
 // +kubebuilder:object:generate=false
 // All the filter/output selected to this cfg
 type CfgResources struct {
+	InputPlugins  []params.PluginStore
 	FilterPlugins []params.PluginStore
 	OutputPlugins []params.PluginStore
 
 	// the hash codes used to depulicate removel
+	InputsHashcodes  map[string]bool
 	FiltersHashcodes map[string]bool
 	OutputsHashcodes map[string]bool
 }
@@ -59,6 +62,7 @@ func NewCfgResources() *CfgResources {
 		FilterPlugins: make([]params.PluginStore, 0),
 		OutputPlugins: make([]params.PluginStore, 0),
 
+		InputsHashcodes:  make(map[string]bool),
 		FiltersHashcodes: make(map[string]bool),
 		OutputsHashcodes: make(map[string]bool),
 	}
@@ -109,6 +113,7 @@ func (pgr *PluginResources) BuildCfgRouter(cfg Renderer) (*fluentdRouter.Route, 
 func (pgr *PluginResources) PatchAndFilterClusterLevelResources(
 	sl plugins.SecretLoader,
 	cfgId string,
+	clusterInputs []ClusterInput,
 	clusterfilters []ClusterFilter,
 	clusteroutputs []ClusterOutput,
 ) (*CfgResources, []string) {
@@ -116,6 +121,24 @@ func (pgr *PluginResources) PatchAndFilterClusterLevelResources(
 	cfgResources := NewCfgResources()
 
 	errs := make([]string, 0)
+	// sort all the CRs by metadata.name
+	sort.SliceStable(clusterInputs[:], func(i, j int) bool {
+		return clusterInputs[i].Name < clusterInputs[j].Name
+	})
+	sort.SliceStable(clusterfilters[:], func(i, j int) bool {
+		return clusterfilters[i].Name < clusterfilters[j].Name
+	})
+	sort.SliceStable(clusteroutputs[:], func(i, j int) bool {
+		return clusteroutputs[i].Name < clusteroutputs[j].Name
+	})
+	// List all inputs matching the label selector.
+	for _, i := range clusterInputs {
+		// patch filterId
+		err := cfgResources.filterForInputs(cfgId, "cluster", i.Name, "clusterinput", sl, i.Spec.Inputs)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
 
 	// List all filters matching the label selector.
 	for _, i := range clusterfilters {
@@ -143,6 +166,7 @@ func (pgr *PluginResources) PatchAndFilterClusterLevelResources(
 func (pgr *PluginResources) PatchAndFilterNamespacedLevelResources(
 	sl plugins.SecretLoader,
 	cfgId string,
+	inputs []Input,
 	filters []Filter,
 	outputs []Output,
 ) (*CfgResources, []string) {
@@ -150,6 +174,15 @@ func (pgr *PluginResources) PatchAndFilterNamespacedLevelResources(
 	cfgResources := NewCfgResources()
 
 	errs := make([]string, 0)
+
+	// List all inputs matching the label selector.
+	for _, i := range inputs {
+		// patch filterId
+		err := cfgResources.filterForInputs(cfgId, i.Namespace, i.Name, "filter", sl, i.Spec.Inputs)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
 
 	// List all filters matching the label selector.
 	for _, i := range filters {
@@ -170,6 +203,35 @@ func (pgr *PluginResources) PatchAndFilterNamespacedLevelResources(
 	}
 
 	return cfgResources, errs
+}
+
+func (r *CfgResources) filterForInputs(
+	cfgId, namespace, name, crdtype string,
+	sl plugins.SecretLoader,
+	inputs []input.Input,
+) error {
+	for n, input := range inputs {
+		inputId := fmt.Sprintf("%s::%s::%s::%s-%d", cfgId, namespace, crdtype, name, n)
+		input.InputCommon.Id = &inputId
+		// if input.InputCommon.Tag == nil {
+		// 	input.InputCommon.Tag = &params.DefaultTag
+		// }
+
+		ps, err := input.Params(sl)
+		if err != nil {
+			return err
+		}
+
+		hashcode := ps.Hash()
+		if _, ok := r.InputsHashcodes[hashcode]; ok {
+			continue
+		}
+
+		r.InputsHashcodes[hashcode] = true
+		r.InputPlugins = append(r.InputPlugins, *ps)
+	}
+
+	return nil
 }
 
 func (r *CfgResources) filterForFilters(
@@ -230,11 +292,56 @@ func (r *CfgResources) filterForOutputs(
 	return nil
 }
 
+// IdentifyCopyAndPatchOutput patches up the controller with the Manager
+func (pgr *PluginResources) IdentifyCopyAndPatchOutput(cfgResources *CfgResources) error {
+	// patched structure for OutputPlugins
+	patchedOutputPlugins := []params.PluginStore{}
+	// copyOutputs stores the id if the output is a `copy`
+	copyOutputs := map[string]int{}
+	// outputs stores the id if the output is not a `copy`
+	outputs := map[string][]int{}
+
+	// Iterate over cfgResources.OutputPlugins to identify Copy output
+	for id, ps := range cfgResources.OutputPlugins {
+		if ps.Store["@type"] == string(params.CopyOutputType) {
+			// We store last output when 2 output with the same tag
+			copyOutputs[ps.Store["tag"]] = id
+		} else {
+			outputs[ps.Store["tag"]] = append(outputs[ps.Store["tag"]], id)
+		}
+	}
+
+	// Patch the outputs
+	for k, output := range outputs {
+		// Does it exist a copy output for this tag ?
+		if c, ok := copyOutputs[k]; ok {
+			// Yes, so we patch
+			for _, id := range output {
+				o := cfgResources.OutputPlugins[id]
+				o.Name = "store"
+				cfgResources.OutputPlugins[c].InsertChilds(&o)
+			}
+			patchedOutputPlugins = append(patchedOutputPlugins, cfgResources.OutputPlugins[c])
+		} else {
+			// No, we don't patch
+			for _, id := range output {
+				o := cfgResources.OutputPlugins[id]
+				patchedOutputPlugins = append(patchedOutputPlugins, o)
+			}
+		}
+	}
+	cfgResources.OutputPlugins = patchedOutputPlugins
+	return nil
+}
+
 // convert the cfg plugins to a label plugin, appends to the global label plugins
 func (pgr *PluginResources) WithCfgResources(cfgRouteLabel string, r *CfgResources) error {
-	if len(r.FilterPlugins) == 0 && len(r.OutputPlugins) == 0 {
+	if len(r.InputPlugins) == 0 && len(r.FilterPlugins) == 0 && len(r.OutputPlugins) == 0 {
 		return errors.New("no filter plugins and no output plugins matched")
 	}
+
+	// insert input plugins of this fluentd config
+	pgr.InputPlugins = append(pgr.InputPlugins, r.InputPlugins...)
 
 	cfgLabelPlugin := params.NewPluginStore("label")
 	cfgLabelPlugin.InsertPairs("tag", cfgRouteLabel)

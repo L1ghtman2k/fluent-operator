@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins"
+	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/custom"
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/params"
 )
 
@@ -29,6 +30,12 @@ type Input struct {
 	Http *Http `json:"http,omitempty"`
 	// in_tail plugin
 	Tail *Tail `json:"tail,omitempty"`
+	// in_sample plugin
+	Sample *Sample `json:"sample,omitempty"`
+	// Custom plugin type
+	CustomPlugin *custom.CustomPlugin `json:"customPlugin,omitempty"`
+	// monitor_agent plugin
+	MonitorAgent *MonitorAgent `json:"monitorAgent,omitempty"`
 }
 
 // DeepCopyInto implements the DeepCopyInto interface.
@@ -76,6 +83,22 @@ func (i *Input) Params(loader plugins.SecretLoader) (*params.PluginStore, error)
 	if i.Tail != nil {
 		ps.InsertType(string(params.TailInputType))
 		return i.tailPlugin(ps, loader), nil
+	}
+
+	if i.Sample != nil {
+		ps.InsertType(string(params.SampleInputType))
+		return i.samplePlugin(ps, loader), nil
+	}
+
+	if i.CustomPlugin != nil {
+		customPs, _ := i.CustomPlugin.Params(loader)
+		ps.Content = customPs.Content
+		return ps, nil
+	}
+
+	if i.MonitorAgent != nil {
+		ps.InsertType(string(params.MonitorAgentType))
+		return i.monitorAgentPlugin(ps, loader), nil
 	}
 
 	return nil, errors.New("you must define an input plugin")
@@ -303,7 +326,7 @@ func (i *Input) httpPlugin(parent *params.PluginStore, loader plugins.SecretLoad
 	}
 
 	if httpModel.KeepLiveTimeout != nil {
-		parent.InsertPairs("keepLive_timeout", fmt.Sprint(*httpModel.KeepLiveTimeout))
+		parent.InsertPairs("keepalive_timeout", fmt.Sprint(*httpModel.KeepLiveTimeout))
 	}
 
 	if httpModel.AddHttpHeaders != nil {
@@ -326,6 +349,49 @@ func (i *Input) httpPlugin(parent *params.PluginStore, loader plugins.SecretLoad
 		parent.InsertPairs("responds_with_empty_img", fmt.Sprint(*httpModel.RespondsWithEmptyImg))
 	}
 
+	return parent
+}
+
+func (i *Input) samplePlugin(parent *params.PluginStore, loader plugins.SecretLoader) *params.PluginStore {
+	sampleModel := i.Sample
+	if sampleModel.Tag != nil {
+		parent.InsertPairs("tag", fmt.Sprint(*sampleModel.Tag))
+	}
+	if sampleModel.Rate != nil {
+		parent.InsertPairs("rate", fmt.Sprint(*sampleModel.Rate))
+	}
+	if sampleModel.Size != nil {
+		parent.InsertPairs("size", fmt.Sprint(*sampleModel.Size))
+	}
+	if sampleModel.AutoIncrementKey != nil {
+		parent.InsertPairs("auto_increment_key", fmt.Sprint(*sampleModel.AutoIncrementKey))
+	}
+	if sampleModel.Sample != nil {
+		parent.InsertPairs("sample", fmt.Sprint(*sampleModel.Sample))
+	}
+	return parent
+}
+
+func (i *Input) monitorAgentPlugin(parent *params.PluginStore, loader plugins.SecretLoader) *params.PluginStore {
+	monitorAgentModel := i.MonitorAgent
+	if monitorAgentModel.Port != nil {
+		parent.InsertPairs("port", fmt.Sprint(*monitorAgentModel.Port))
+	}
+	if monitorAgentModel.Bind != nil {
+		parent.InsertPairs("bind", fmt.Sprint(*monitorAgentModel.Bind))
+	}
+	if monitorAgentModel.Tag != nil {
+		parent.InsertPairs("tag", fmt.Sprint(*monitorAgentModel.Tag))
+	}
+	if monitorAgentModel.EmitInterval != nil {
+		parent.InsertPairs("emit_interval", fmt.Sprint(*monitorAgentModel.EmitInterval))
+	}
+	if monitorAgentModel.IncludeConfig != nil {
+		parent.InsertPairs("include_config", fmt.Sprint(*monitorAgentModel.IncludeConfig))
+	}
+	if monitorAgentModel.IncludeRetry != nil {
+		parent.InsertPairs("include_retry", fmt.Sprint(*monitorAgentModel.IncludeRetry))
+	}
 	return parent
 }
 

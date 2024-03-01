@@ -1650,6 +1650,51 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              clusterInputSelector:
+                description: Select cluster input plugins
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
               clusterOutputSelector:
                 description: Select cluster output plugins
                 properties:
@@ -1790,6 +1835,22 @@ spec:
                 description: A user friendly alias name for this input plugin. Used
                   in metrics for distinction of each configured input.
                 type: string
+              collectd:
+                description: Collectd defines the Collectd input plugin configuration
+                properties:
+                  listen:
+                    description: 'Set the address to listen to, default: 0.0.0.0'
+                    type: string
+                  port:
+                    description: 'Set the port to listen to, default: 25826'
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  typesDB:
+                    description: 'Set the data specification file,default: /usr/share/collectd/types.db'
+                    type: string
+                type: object
               customPlugin:
                 description: CustomPlugin defines Custom Input configuration.
                 properties:
@@ -1872,6 +1933,110 @@ spec:
                     description: Set the permission of unix socket file.
                     type: string
                 type: object
+              http:
+                description: HTTP defines the HTTP input plugin configuration
+                properties:
+                  bufferChunkSize:
+                    description: This sets the chunk size for incoming incoming JSON
+                      messages. These chunks are then stored/managed in the space
+                      available by buffer_max_size,default 512K.
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  bufferMaxSize:
+                    description: Specify the maximum buffer size in KB to receive
+                      a JSON message,default 4M.
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  listen:
+                    description: The address to listen on,default 0.0.0.0
+                    type: string
+                  port:
+                    description: The port for Fluent Bit to listen on,default 9880
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  successfulHeader:
+                    description: 'Add an HTTP header key/value pair on success. Multiple
+                      headers can be set. Example: X-Custom custom-answer.'
+                    type: string
+                  successfulResponseCode:
+                    description: It allows to set successful response code. 200, 201
+                      and 204 are supported,default 201.
+                    format: int32
+                    type: integer
+                  tagKey:
+                    description: Specify the key name to overwrite a tag. If set,
+                      the tag will be overwritten by a value of the key.
+                    type: string
+                  tls:
+                    description: Fluent Bit provides integrated support for Transport
+                      Layer Security (TLS) and it predecessor Secure Sockets Layer
+                      (SSL) respectively.
+                    properties:
+                      caFile:
+                        description: Absolute path to CA certificate file
+                        type: string
+                      caPath:
+                        description: Absolute path to scan for certificate files
+                        type: string
+                      crtFile:
+                        description: Absolute path to Certificate file
+                        type: string
+                      debug:
+                        description: 'Set TLS debug verbosity level. It accept the
+                          following values: 0 (No debug), 1 (Error), 2 (State change),
+                          3 (Informational) and 4 Verbose'
+                        enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        format: int32
+                        type: integer
+                      keyFile:
+                        description: Absolute path to private Key file
+                        type: string
+                      keyPassword:
+                        description: Optional password for tls.key_file file
+                        properties:
+                          valueFrom:
+                            description: ValueSource defines how to find a value's
+                              key.
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                      verify:
+                        description: Force certificate validation
+                        type: boolean
+                      vhost:
+                        description: Hostname to be used for TLS SNI extension
+                        type: string
+                    type: object
+                type: object
               logLevel:
                 enum:
                 - "off"
@@ -1881,6 +2046,41 @@ spec:
                 - debug
                 - trace
                 type: string
+              mqtt:
+                description: MQTT defines the MQTT input plugin configuration
+                properties:
+                  listen:
+                    description: 'Listener network interface, default: 0.0.0.0'
+                    type: string
+                  port:
+                    description: 'TCP port where listening for connections, default:
+                      1883'
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                type: object
+              nginx:
+                description: Nginx defines the Nginx input plugin configuration
+                properties:
+                  host:
+                    description: 'Name of the target host or IP address to check,
+                      default: localhost'
+                    type: string
+                  nginxPlus:
+                    description: 'Turn on NGINX plus mode,default: true'
+                    type: boolean
+                  port:
+                    description: 'Port of the target nginx service to connect to,
+                      default: 80'
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  statusURL:
+                    description: 'The URL of the Stub Status Handler,default: /status'
+                    type: string
+                type: object
               nodeExporterMetrics:
                 description: NodeExporterMetrics defines Node Exporter Metrics Input
                   configuration.
@@ -1903,6 +2103,43 @@ spec:
                   tag:
                     description: Tag name associated to all records comming from this
                       plugin.
+                    type: string
+                type: object
+              openTelemetry:
+                description: OpenTelemetry defines the OpenTelemetry input plugin
+                  configuration
+                properties:
+                  bufferChunkSize:
+                    description: This sets the chunk size for incoming incoming JSON
+                      messages. These chunks are then stored/managed in the space
+                      available by buffer_max_size(default 512K).
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  bufferMaxSize:
+                    description: Specify the maximum buffer size in KB to receive
+                      a JSON message(default 4M).
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  listen:
+                    description: The address to listen on,default 0.0.0.0
+                    type: string
+                  port:
+                    description: The port for Fluent Bit to listen on.default 4318.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  rawTraces:
+                    description: Route trace data as a log message(default false).
+                    type: boolean
+                  successfulResponseCode:
+                    description: It allows to set successful response code. 200, 201
+                      and 204 are supported(default 201).
+                    format: int32
+                    type: integer
+                  tagKey:
+                    description: Specify the key name to overwrite a tag. If set,
+                      the tag will be overwritten by a value of the key.
                     type: string
                 type: object
               prometheusScrapeMetrics:
@@ -1931,6 +2168,85 @@ spec:
                     description: Tag name associated to all records comming from this
                       plugin
                     type: string
+                type: object
+              statsd:
+                description: StatsD defines the StatsD input plugin configuration
+                properties:
+                  listen:
+                    description: 'Listener network interface, default: 0.0.0.0'
+                    type: string
+                  port:
+                    description: 'UDP port where listening for connections, default:
+                      8125'
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                type: object
+              syslog:
+                description: Syslog defines the Syslog input plugin configuration
+                properties:
+                  bufferChunkSize:
+                    description: By default the buffer to store the incoming Syslog
+                      messages, do not allocate the maximum memory allowed, instead
+                      it allocate memory when is required. The rounds of allocations
+                      are set by Buffer_Chunk_Size. If not set, Buffer_Chunk_Size
+                      is equal to 32000 bytes (32KB).
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  bufferMaxSize:
+                    description: Specify the maximum buffer size to receive a Syslog
+                      message. If not set, the default size will be the value of Buffer_Chunk_Size.
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  listen:
+                    description: 'If Mode is set to tcp or udp, specify the network
+                      interface to bind, default: 0.0.0.0'
+                    type: string
+                  mode:
+                    description: 'Defines transport protocol mode: unix_udp (UDP over
+                      Unix socket), unix_tcp (TCP over Unix socket), tcp or udp'
+                    enum:
+                    - unix_udp
+                    - unix_tcp
+                    - tcp
+                    - udp
+                    type: string
+                  parser:
+                    description: Specify an alternative parser for the message. If
+                      Mode is set to tcp or udp then the default parser is syslog-rfc5424
+                      otherwise syslog-rfc3164-local is used. If your syslog messages
+                      have fractional seconds set this Parser value to syslog-rfc5424
+                      instead.
+                    type: string
+                  path:
+                    description: If Mode is set to unix_tcp or unix_udp, set the absolute
+                      path to the Unix socket file.
+                    type: string
+                  port:
+                    description: If Mode is set to tcp or udp, specify the TCP port
+                      to listen for incoming connections.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  receiveBufferSize:
+                    description: Specify the maximum socket receive buffer size. If
+                      not set, the default value is OS-dependant, but generally too
+                      low to accept thousands of syslog messages per second without
+                      loss on udp or unix_udp sockets. Note that on Linux the value
+                      is capped by sysctl net.core.rmem_max.
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  sourceAddressKey:
+                    description: Specify the key where the source address will be
+                      injected.
+                    type: string
+                  unixPerm:
+                    description: 'If Mode is set to unix_tcp or unix_udp, set the
+                      permission of the Unix socket file, default: 0644'
+                    format: int32
+                    type: integer
                 type: object
               systemd:
                 description: Systemd defines Systemd Input configuration.
@@ -2178,6 +2494,45 @@ spec:
                     type: string
                   tagRegex:
                     description: Set a regex to exctract fields from the file
+                    type: string
+                type: object
+              tcp:
+                description: TCP defines the TCP input plugin configuration
+                properties:
+                  bufferSize:
+                    description: Specify the maximum buffer size in KB to receive
+                      a JSON message. If not set, the default size will be the value
+                      of Chunk_Size.
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  chunkSize:
+                    description: By default the buffer to store the incoming JSON
+                      messages, do not allocate the maximum memory allowed, instead
+                      it allocate memory when is required. The rounds of allocations
+                      are set by Chunk_Size in KB. If not set, Chunk_Size is equal
+                      to 32 (32KB).
+                    pattern: ^\d+(k|K|KB|kb|m|M|MB|mb|g|G|GB|gb)?$
+                    type: string
+                  format:
+                    description: Specify the expected payload format. It support the
+                      options json and none. When using json, it expects JSON maps,
+                      when is set to none, it will split every record using the defined
+                      Separator (option below).
+                    type: string
+                  listen:
+                    description: Listener network interface,default 0.0.0.0
+                    type: string
+                  port:
+                    description: TCP port where listening for connections,default
+                      5170
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  separator:
+                    description: When the expected Format is set to none, Fluent Bit
+                      needs a separator string to split the records. By default it
+                      uses the breakline character (LF or 0x10).
                     type: string
                 type: object
             type: object
@@ -2619,6 +2974,12 @@ spec:
                   cloudID:
                     description: If you are using Elastic's Elasticsearch Service
                       you can specify the cloud_id of the cluster running.
+                    type: string
+                  compress:
+                    description: Set payload compression mechanism. Option available
+                      is 'gzip'
+                    enum:
+                    - gzip
                     type: string
                   currentTimeIndex:
                     description: Use current time for index generation instead of
@@ -3094,6 +3455,121 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                         type: object
+                    type: object
+                type: object
+              gelf:
+                description: Gelf defines GELF Output configuration.
+                properties:
+                  compress:
+                    description: If transport protocol is udp, it defines if UDP packets
+                      should be compressed.
+                    type: boolean
+                  fullMessageKey:
+                    description: FullMessageKey is the key to use as the long message
+                      that can i.e. contain a backtrace.
+                    type: string
+                  host:
+                    description: IP address or hostname of the target Graylog server.
+                    type: string
+                  hostKey:
+                    description: HostKey is the key which its value is used as the
+                      name of the host, source or application that sent this message.
+                    type: string
+                  levelKey:
+                    description: LevelKey is the key to be used as the log level.
+                    type: string
+                  mode:
+                    description: The protocol to use (tls, tcp or udp).
+                    enum:
+                    - tls
+                    - tcp
+                    - udp
+                    type: string
+                  packetSize:
+                    description: If transport protocol is udp, it sets the size of
+                      packets to be sent.
+                    format: int32
+                    type: integer
+                  port:
+                    description: The port that the target Graylog server is listening
+                      on.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  shortMessageKey:
+                    description: ShortMessageKey is the key to use as the short message.
+                    type: string
+                  timestampKey:
+                    description: TimestampKey is the key which its value is used as
+                      the timestamp of the message.
+                    type: string
+                  tls:
+                    description: Fluent Bit provides integrated support for Transport
+                      Layer Security (TLS) and it predecessor Secure Sockets Layer
+                      (SSL) respectively.
+                    properties:
+                      caFile:
+                        description: Absolute path to CA certificate file
+                        type: string
+                      caPath:
+                        description: Absolute path to scan for certificate files
+                        type: string
+                      crtFile:
+                        description: Absolute path to Certificate file
+                        type: string
+                      debug:
+                        description: 'Set TLS debug verbosity level. It accept the
+                          following values: 0 (No debug), 1 (Error), 2 (State change),
+                          3 (Informational) and 4 Verbose'
+                        enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        format: int32
+                        type: integer
+                      keyFile:
+                        description: Absolute path to private Key file
+                        type: string
+                      keyPassword:
+                        description: Optional password for tls.key_file file
+                        properties:
+                          valueFrom:
+                            description: ValueSource defines how to find a value's
+                              key.
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                      verify:
+                        description: Force certificate validation
+                        type: boolean
+                      vhost:
+                        description: Hostname to be used for TLS SNI extension
+                        type: string
                     type: object
                 type: object
               http:
@@ -4606,6 +5082,73 @@ spec:
                     description: Use the S3 PutObject API, instead of the multipart
                       upload API.
                     type: boolean
+                  tls:
+                    description: Fluent Bit provides integrated support for Transport
+                      Layer Security (TLS) and it predecessor Secure Sockets Layer
+                      (SSL) respectively.
+                    properties:
+                      caFile:
+                        description: Absolute path to CA certificate file
+                        type: string
+                      caPath:
+                        description: Absolute path to scan for certificate files
+                        type: string
+                      crtFile:
+                        description: Absolute path to Certificate file
+                        type: string
+                      debug:
+                        description: 'Set TLS debug verbosity level. It accept the
+                          following values: 0 (No debug), 1 (Error), 2 (State change),
+                          3 (Informational) and 4 Verbose'
+                        enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        format: int32
+                        type: integer
+                      keyFile:
+                        description: Absolute path to private Key file
+                        type: string
+                      keyPassword:
+                        description: Optional password for tls.key_file file
+                        properties:
+                          valueFrom:
+                            description: ValueSource defines how to find a value's
+                              key.
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                      verify:
+                        description: Force certificate validation
+                        type: boolean
+                      vhost:
+                        description: Hostname to be used for TLS SNI extension
+                        type: string
+                    type: object
                 required:
                 - Bucket
                 - Region
@@ -5642,6 +6185,21 @@ spec:
                           description: Web identity token file
                           type: string
                       type: object
+                    copy:
+                      description: copy plugin
+                      properties:
+                        copyMode:
+                          description: CopyMode defines how to pass the events to
+                            <store> plugins.
+                          enum:
+                          - no_copy
+                          - shallow
+                          - deep
+                          - marshal
+                          type: string
+                      required:
+                      - copyMode
+                      type: object
                     customPlugin:
                       description: Custom plugin type
                       properties:
@@ -5776,6 +6334,48 @@ spec:
                     elasticsearch:
                       description: out_es plugin
                       properties:
+                        caFile:
+                          description: Optional, Absolute path to CA certificate file
+                          type: string
+                        clientCert:
+                          description: Optional, Absolute path to client Certificate
+                            file
+                          type: string
+                        clientKey:
+                          description: Optional, Absolute path to client private Key
+                            file
+                          type: string
+                        clientKeyPassword:
+                          description: Optional, password for ClientKey file
+                          properties:
+                            valueFrom:
+                              description: ValueSource defines how to find a value's
+                                key.
+                              properties:
+                                secretKeyRef:
+                                  description: Selects a key of a secret in the pod's
+                                    namespace
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      description: 'Name of the referent. More info:
+                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        TODO: Add other useful fields. apiVersion,
+                                        kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                          type: object
                         host:
                           description: 'The hostname of your Elasticsearch node (default:
                             localhost).'
@@ -5845,6 +6445,9 @@ spec:
                           description: 'Specify https if your Elasticsearch endpoint
                             supports SSL (default: http).'
                           type: string
+                        sslVerify:
+                          description: Optional, Force certificate validation
+                          type: boolean
                         user:
                           description: Optional, The login credentials to connect
                             to Elasticsearch
@@ -6970,6 +7573,18 @@ spec:
                         s3Region:
                           description: The Amazon S3 region name
                           type: string
+                        sseCustomerAlgorithm:
+                          description: The AWS KMS enctyption algorithm.
+                          type: string
+                        sseCustomerKey:
+                          description: The AWS KMS key.
+                          type: string
+                        sseCustomerKeyMd5:
+                          description: The AWS KMS key MD5.
+                          type: string
+                        ssekmsKeyId:
+                          description: The AWS KMS key ID.
+                          type: string
                         sslVerifyPeer:
                           description: Verify the SSL certificate of the endpoint.
                           type: boolean
@@ -6983,6 +7598,9 @@ spec:
                           type: string
                         timeSliceFormat:
                           description: This timestamp is added to each file name
+                          type: string
+                        useServerSideEncryption:
+                          description: the following parameters are for S3 kms https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
                           type: string
                       type: object
                     stdout:
@@ -12848,6 +13466,10 @@ spec:
                         type: string
                     type: object
                 type: object
+              disableLogVolumes:
+                description: DisableLogVolumes removes the hostPath mounts for varlibcontainers,
+                  varlogs and systemd.
+                type: boolean
               disableService:
                 description: DisableService tells if the fluentbit service should
                   be deployed.
@@ -18220,6 +18842,51 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              clusterInputSelector:
+                description: Select cluster input plugins
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
               clusterOutputSelector:
                 description: Select cluster output plugins
                 properties:
@@ -18275,6 +18942,51 @@ spec:
                 type: string
               filterSelector:
                 description: Select namespaced filter plugins
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              inputSelector:
+                description: Select cluster input plugins
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -19870,6 +20582,52 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              defaultInputSelector:
+                description: Select cluster input plugins used to gather the default
+                  cluster output
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
               defaultOutputSelector:
                 description: Select cluster output plugins used to send all logs that
                   did not match any route to the matching outputs
@@ -20082,6 +20840,14 @@ spec:
                   description: Input defines all available input plugins and their
                     parameters
                   properties:
+                    customPlugin:
+                      description: Custom plugin type
+                      properties:
+                        config:
+                          type: string
+                      required:
+                      - config
+                      type: object
                     forward:
                       description: in_forward plugin
                       properties:
@@ -20560,6 +21326,62 @@ spec:
                       description: The @log_level parameter specifies the plugin-specific
                         logging level
                       type: string
+                    monitorAgent:
+                      description: monitor_agent plugin
+                      properties:
+                        bind:
+                          description: The bind address to listen to.
+                          type: string
+                        emitInterval:
+                          description: The interval time between event emits. This
+                            will be used when "tag" is configured.
+                          format: int64
+                          type: integer
+                        includeConfig:
+                          description: You can set this option to false to remove
+                            the config field from the response.
+                          type: boolean
+                        includeRetry:
+                          description: You can set this option to false to remove
+                            the retry field from the response.
+                          type: boolean
+                        port:
+                          description: The port to listen to.
+                          format: int64
+                          type: integer
+                        tag:
+                          description: If you set this parameter, this plugin emits
+                            metrics as records.
+                          type: string
+                      type: object
+                    sample:
+                      description: in_sample plugin
+                      properties:
+                        autoIncrementKey:
+                          description: If specified, each generated event has an auto-incremented
+                            key field.
+                          type: string
+                        rate:
+                          description: It configures how many events to generate per
+                            second.
+                          format: int64
+                          type: integer
+                        sample:
+                          description: The sample data to be generated. It should
+                            be either an array of JSON hashes or a single JSON hash.
+                            If it is an array of JSON hashes, the hashes in the array
+                            are cycled through in order.
+                          type: string
+                        size:
+                          description: The number of events in the event stream of
+                            each emit.
+                          format: int64
+                          type: integer
+                        tag:
+                          description: The tag of the event. The value is the tag
+                            assigned to the generated events.
+                          type: string
+                      type: object
                     tail:
                       description: in_tail plugin
                       properties:
@@ -20888,6 +21710,149 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              livenessProbe:
+                description: LivenessProbe represents the liveness probe for the fluentd
+                  container.
+                properties:
+                  exec:
+                    description: Exec specifies the action to take.
+                    properties:
+                      command:
+                        description: Command is the command line to execute inside
+                          the container, the working directory for the command  is
+                          root ('/') in the container's filesystem. The command is
+                          simply exec'd, it is not run inside a shell, so traditional
+                          shell instructions ('|', etc) won't work. To use a shell,
+                          you need to explicitly call out to that shell. Exit status
+                          of 0 is treated as live/healthy and non-zero is unhealthy.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  failureThreshold:
+                    description: Minimum consecutive failures for the probe to be
+                      considered failed after having succeeded. Defaults to 3. Minimum
+                      value is 1.
+                    format: int32
+                    type: integer
+                  grpc:
+                    description: GRPC specifies an action involving a GRPC port. This
+                      is a beta field and requires enabling GRPCContainerProbe feature
+                      gate.
+                    properties:
+                      port:
+                        description: Port number of the gRPC service. Number must
+                          be in the range 1 to 65535.
+                        format: int32
+                        type: integer
+                      service:
+                        description: "Service is the name of the service to place
+                          in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+                          \n If this is not specified, the default behavior is defined
+                          by gRPC."
+                        type: string
+                    required:
+                    - port
+                    type: object
+                  httpGet:
+                    description: HTTPGet specifies the http request to perform.
+                    properties:
+                      host:
+                        description: Host name to connect to, defaults to the pod
+                          IP. You probably want to set "Host" in httpHeaders instead.
+                        type: string
+                      httpHeaders:
+                        description: Custom headers to set in the request. HTTP allows
+                          repeated headers.
+                        items:
+                          description: HTTPHeader describes a custom header to be
+                            used in HTTP probes
+                          properties:
+                            name:
+                              description: The header field name
+                              type: string
+                            value:
+                              description: The header field value
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                      path:
+                        description: Path to access on the HTTP server.
+                        type: string
+                      port:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Name or number of the port to access on the container.
+                          Number must be in the range 1 to 65535. Name must be an
+                          IANA_SVC_NAME.
+                        x-kubernetes-int-or-string: true
+                      scheme:
+                        description: Scheme to use for connecting to the host. Defaults
+                          to HTTP.
+                        type: string
+                    required:
+                    - port
+                    type: object
+                  initialDelaySeconds:
+                    description: 'Number of seconds after the container has started
+                      before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    description: How often (in seconds) to perform the probe. Default
+                      to 10 seconds. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  successThreshold:
+                    description: Minimum consecutive successes for the probe to be
+                      considered successful after having failed. Defaults to 1. Must
+                      be 1 for liveness and startup. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  tcpSocket:
+                    description: TCPSocket specifies an action involving a TCP port.
+                    properties:
+                      host:
+                        description: 'Optional: Host name to connect to, defaults
+                          to the pod IP.'
+                        type: string
+                      port:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Number or name of the port to access on the container.
+                          Number must be in the range 1 to 65535. Name must be an
+                          IANA_SVC_NAME.
+                        x-kubernetes-int-or-string: true
+                    required:
+                    - port
+                    type: object
+                  terminationGracePeriodSeconds:
+                    description: Optional duration in seconds the pod needs to terminate
+                      gracefully upon probe failure. The grace period is the duration
+                      in seconds after the processes running in the pod are sent a
+                      termination signal and the time when the processes are forcibly
+                      halted with a kill signal. Set this value longer than the expected
+                      cleanup time for your process. If this value is nil, the pod's
+                      terminationGracePeriodSeconds will be used. Otherwise, this
+                      value overrides the value provided by the pod spec. Value must
+                      be non-negative integer. The value zero indicates stop immediately
+                      via the kill signal (no opportunity to shut down). This is a
+                      beta field and requires enabling ProbeTerminationGracePeriod
+                      feature gate. Minimum value is 1. spec.terminationGracePeriodSeconds
+                      is used if unset.
+                    format: int64
+                    type: integer
+                  timeoutSeconds:
+                    description: 'Number of seconds after which the probe times out.
+                      Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                type: object
               logLevel:
                 default: info
                 description: Global logging verbosity
@@ -22509,6 +23474,149 @@ spec:
                   - verbs
                   type: object
                 type: array
+              readinessProbe:
+                description: ReadinessProbe represents the readiness probe for the
+                  fluentd container.
+                properties:
+                  exec:
+                    description: Exec specifies the action to take.
+                    properties:
+                      command:
+                        description: Command is the command line to execute inside
+                          the container, the working directory for the command  is
+                          root ('/') in the container's filesystem. The command is
+                          simply exec'd, it is not run inside a shell, so traditional
+                          shell instructions ('|', etc) won't work. To use a shell,
+                          you need to explicitly call out to that shell. Exit status
+                          of 0 is treated as live/healthy and non-zero is unhealthy.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  failureThreshold:
+                    description: Minimum consecutive failures for the probe to be
+                      considered failed after having succeeded. Defaults to 3. Minimum
+                      value is 1.
+                    format: int32
+                    type: integer
+                  grpc:
+                    description: GRPC specifies an action involving a GRPC port. This
+                      is a beta field and requires enabling GRPCContainerProbe feature
+                      gate.
+                    properties:
+                      port:
+                        description: Port number of the gRPC service. Number must
+                          be in the range 1 to 65535.
+                        format: int32
+                        type: integer
+                      service:
+                        description: "Service is the name of the service to place
+                          in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+                          \n If this is not specified, the default behavior is defined
+                          by gRPC."
+                        type: string
+                    required:
+                    - port
+                    type: object
+                  httpGet:
+                    description: HTTPGet specifies the http request to perform.
+                    properties:
+                      host:
+                        description: Host name to connect to, defaults to the pod
+                          IP. You probably want to set "Host" in httpHeaders instead.
+                        type: string
+                      httpHeaders:
+                        description: Custom headers to set in the request. HTTP allows
+                          repeated headers.
+                        items:
+                          description: HTTPHeader describes a custom header to be
+                            used in HTTP probes
+                          properties:
+                            name:
+                              description: The header field name
+                              type: string
+                            value:
+                              description: The header field value
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                      path:
+                        description: Path to access on the HTTP server.
+                        type: string
+                      port:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Name or number of the port to access on the container.
+                          Number must be in the range 1 to 65535. Name must be an
+                          IANA_SVC_NAME.
+                        x-kubernetes-int-or-string: true
+                      scheme:
+                        description: Scheme to use for connecting to the host. Defaults
+                          to HTTP.
+                        type: string
+                    required:
+                    - port
+                    type: object
+                  initialDelaySeconds:
+                    description: 'Number of seconds after the container has started
+                      before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    description: How often (in seconds) to perform the probe. Default
+                      to 10 seconds. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  successThreshold:
+                    description: Minimum consecutive successes for the probe to be
+                      considered successful after having failed. Defaults to 1. Must
+                      be 1 for liveness and startup. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  tcpSocket:
+                    description: TCPSocket specifies an action involving a TCP port.
+                    properties:
+                      host:
+                        description: 'Optional: Host name to connect to, defaults
+                          to the pod IP.'
+                        type: string
+                      port:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Number or name of the port to access on the container.
+                          Number must be in the range 1 to 65535. Name must be an
+                          IANA_SVC_NAME.
+                        x-kubernetes-int-or-string: true
+                    required:
+                    - port
+                    type: object
+                  terminationGracePeriodSeconds:
+                    description: Optional duration in seconds the pod needs to terminate
+                      gracefully upon probe failure. The grace period is the duration
+                      in seconds after the processes running in the pod are sent a
+                      termination signal and the time when the processes are forcibly
+                      halted with a kill signal. Set this value longer than the expected
+                      cleanup time for your process. If this value is nil, the pod's
+                      terminationGracePeriodSeconds will be used. Otherwise, this
+                      value overrides the value provided by the pod spec. Value must
+                      be non-negative integer. The value zero indicates stop immediately
+                      via the kill signal (no opportunity to shut down). This is a
+                      beta field and requires enabling ProbeTerminationGracePeriod
+                      feature gate. Minimum value is 1. spec.terminationGracePeriodSeconds
+                      is used if unset.
+                    format: int64
+                    type: integer
+                  timeoutSeconds:
+                    description: 'Number of seconds after which the probe times out.
+                      Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                type: object
               replicas:
                 description: Numbers of the Fluentd instance Applicable when the mode
                   is "collector", and will be ignored when the mode is "agent"
@@ -25221,6 +26329,12 @@ spec:
                     description: If you are using Elastic's Elasticsearch Service
                       you can specify the cloud_id of the cluster running.
                     type: string
+                  compress:
+                    description: Set payload compression mechanism. Option available
+                      is 'gzip'
+                    enum:
+                    - gzip
+                    type: string
                   currentTimeIndex:
                     description: Use current time for index generation instead of
                       message record
@@ -25695,6 +26809,121 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                         type: object
+                    type: object
+                type: object
+              gelf:
+                description: Gelf defines GELF Output configuration.
+                properties:
+                  compress:
+                    description: If transport protocol is udp, it defines if UDP packets
+                      should be compressed.
+                    type: boolean
+                  fullMessageKey:
+                    description: FullMessageKey is the key to use as the long message
+                      that can i.e. contain a backtrace.
+                    type: string
+                  host:
+                    description: IP address or hostname of the target Graylog server.
+                    type: string
+                  hostKey:
+                    description: HostKey is the key which its value is used as the
+                      name of the host, source or application that sent this message.
+                    type: string
+                  levelKey:
+                    description: LevelKey is the key to be used as the log level.
+                    type: string
+                  mode:
+                    description: The protocol to use (tls, tcp or udp).
+                    enum:
+                    - tls
+                    - tcp
+                    - udp
+                    type: string
+                  packetSize:
+                    description: If transport protocol is udp, it sets the size of
+                      packets to be sent.
+                    format: int32
+                    type: integer
+                  port:
+                    description: The port that the target Graylog server is listening
+                      on.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  shortMessageKey:
+                    description: ShortMessageKey is the key to use as the short message.
+                    type: string
+                  timestampKey:
+                    description: TimestampKey is the key which its value is used as
+                      the timestamp of the message.
+                    type: string
+                  tls:
+                    description: Fluent Bit provides integrated support for Transport
+                      Layer Security (TLS) and it predecessor Secure Sockets Layer
+                      (SSL) respectively.
+                    properties:
+                      caFile:
+                        description: Absolute path to CA certificate file
+                        type: string
+                      caPath:
+                        description: Absolute path to scan for certificate files
+                        type: string
+                      crtFile:
+                        description: Absolute path to Certificate file
+                        type: string
+                      debug:
+                        description: 'Set TLS debug verbosity level. It accept the
+                          following values: 0 (No debug), 1 (Error), 2 (State change),
+                          3 (Informational) and 4 Verbose'
+                        enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        format: int32
+                        type: integer
+                      keyFile:
+                        description: Absolute path to private Key file
+                        type: string
+                      keyPassword:
+                        description: Optional password for tls.key_file file
+                        properties:
+                          valueFrom:
+                            description: ValueSource defines how to find a value's
+                              key.
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                      verify:
+                        description: Force certificate validation
+                        type: boolean
+                      vhost:
+                        description: Hostname to be used for TLS SNI extension
+                        type: string
                     type: object
                 type: object
               http:
@@ -27207,6 +28436,73 @@ spec:
                     description: Use the S3 PutObject API, instead of the multipart
                       upload API.
                     type: boolean
+                  tls:
+                    description: Fluent Bit provides integrated support for Transport
+                      Layer Security (TLS) and it predecessor Secure Sockets Layer
+                      (SSL) respectively.
+                    properties:
+                      caFile:
+                        description: Absolute path to CA certificate file
+                        type: string
+                      caPath:
+                        description: Absolute path to scan for certificate files
+                        type: string
+                      crtFile:
+                        description: Absolute path to Certificate file
+                        type: string
+                      debug:
+                        description: 'Set TLS debug verbosity level. It accept the
+                          following values: 0 (No debug), 1 (Error), 2 (State change),
+                          3 (Informational) and 4 Verbose'
+                        enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        format: int32
+                        type: integer
+                      keyFile:
+                        description: Absolute path to private Key file
+                        type: string
+                      keyPassword:
+                        description: Optional password for tls.key_file file
+                        properties:
+                          valueFrom:
+                            description: ValueSource defines how to find a value's
+                              key.
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                      verify:
+                        description: Force certificate validation
+                        type: boolean
+                      vhost:
+                        description: Hostname to be used for TLS SNI extension
+                        type: string
+                    type: object
                 required:
                 - Bucket
                 - Region
@@ -28243,6 +29539,21 @@ spec:
                           description: Web identity token file
                           type: string
                       type: object
+                    copy:
+                      description: copy plugin
+                      properties:
+                        copyMode:
+                          description: CopyMode defines how to pass the events to
+                            <store> plugins.
+                          enum:
+                          - no_copy
+                          - shallow
+                          - deep
+                          - marshal
+                          type: string
+                      required:
+                      - copyMode
+                      type: object
                     customPlugin:
                       description: Custom plugin type
                       properties:
@@ -28377,6 +29688,48 @@ spec:
                     elasticsearch:
                       description: out_es plugin
                       properties:
+                        caFile:
+                          description: Optional, Absolute path to CA certificate file
+                          type: string
+                        clientCert:
+                          description: Optional, Absolute path to client Certificate
+                            file
+                          type: string
+                        clientKey:
+                          description: Optional, Absolute path to client private Key
+                            file
+                          type: string
+                        clientKeyPassword:
+                          description: Optional, password for ClientKey file
+                          properties:
+                            valueFrom:
+                              description: ValueSource defines how to find a value's
+                                key.
+                              properties:
+                                secretKeyRef:
+                                  description: Selects a key of a secret in the pod's
+                                    namespace
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      description: 'Name of the referent. More info:
+                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        TODO: Add other useful fields. apiVersion,
+                                        kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                          type: object
                         host:
                           description: 'The hostname of your Elasticsearch node (default:
                             localhost).'
@@ -28446,6 +29799,9 @@ spec:
                           description: 'Specify https if your Elasticsearch endpoint
                             supports SSL (default: http).'
                           type: string
+                        sslVerify:
+                          description: Optional, Force certificate validation
+                          type: boolean
                         user:
                           description: Optional, The login credentials to connect
                             to Elasticsearch
@@ -29571,6 +30927,18 @@ spec:
                         s3Region:
                           description: The Amazon S3 region name
                           type: string
+                        sseCustomerAlgorithm:
+                          description: The AWS KMS enctyption algorithm.
+                          type: string
+                        sseCustomerKey:
+                          description: The AWS KMS key.
+                          type: string
+                        sseCustomerKeyMd5:
+                          description: The AWS KMS key MD5.
+                          type: string
+                        ssekmsKeyId:
+                          description: The AWS KMS key ID.
+                          type: string
                         sslVerifyPeer:
                           description: Verify the SSL certificate of the endpoint.
                           type: boolean
@@ -29584,6 +30952,9 @@ spec:
                           type: string
                         timeSliceFormat:
                           description: This timestamp is added to each file name
+                          type: string
+                        useServerSideEncryption:
+                          description: the following parameters are for S3 kms https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
                           type: string
                       type: object
                     stdout:

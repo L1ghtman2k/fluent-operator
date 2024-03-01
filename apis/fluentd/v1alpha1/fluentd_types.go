@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"slices"
+
 	"github.com/fluent/fluent-operator/v2/apis/fluentd/v1alpha1/plugins/input"
-	"github.com/fluent/fluent-operator/v2/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,8 @@ const (
 type FluentdSpec struct {
 	// Fluentd global inputs.
 	GlobalInputs []input.Input `json:"globalInputs,omitempty"`
+	// Select cluster input plugins used to gather the default cluster output
+	DefaultInputSelector *metav1.LabelSelector `json:"defaultInputSelector,omitempty"`
 	// Select cluster filter plugins used to filter for the default cluster output
 	DefaultFilterSelector *metav1.LabelSelector `json:"defaultFilterSelector,omitempty"`
 	// Select cluster output plugins used to send all logs that did not match any route to the matching outputs
@@ -110,6 +113,10 @@ type FluentdSpec struct {
 	// Storage for position db. You will use it if tail input is enabled.
 	// Applicable when the mode is "agent", and will be ignored when the mode is "collector"
 	PositionDB corev1.VolumeSource `json:"positionDB,omitempty"`
+	// LivenessProbe represents the liveness probe for the fluentd container.
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+	// ReadinessProbe represents the readiness probe for the fluentd container.
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
 }
 
 // FluentDService the service of the FluentD
@@ -166,7 +173,7 @@ const FluentdFinalizerName = "fluentd.fluent.io"
 
 // HasFinalizer returns true if the item has the specified finalizer
 func (fd *Fluentd) HasFinalizer(finalizerName string) bool {
-	return utils.ContainString(fd.ObjectMeta.Finalizers, finalizerName)
+	return slices.Contains(fd.ObjectMeta.Finalizers, finalizerName)
 }
 
 // AddFinalizer adds the specified finalizer
@@ -176,7 +183,7 @@ func (fd *Fluentd) AddFinalizer(finalizerName string) {
 
 // RemoveFinalizer removes the specified finalizer
 func (fd *Fluentd) RemoveFinalizer(finalizerName string) {
-	fd.ObjectMeta.Finalizers = utils.RemoveString(fd.ObjectMeta.Finalizers, finalizerName)
+	fd.ObjectMeta.Finalizers = slices.DeleteFunc(fd.ObjectMeta.Finalizers, func(s string) bool { return s == finalizerName })
 }
 
 // +kubebuilder:object:root=true

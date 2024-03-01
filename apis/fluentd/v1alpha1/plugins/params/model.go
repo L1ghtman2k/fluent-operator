@@ -61,13 +61,23 @@ func (ps *PluginStore) InsertChilds(childs ...*PluginStore) {
 // The total hash string for this plugin store
 func (ps *PluginStore) Hash() string {
 	c := NewPluginStore(ps.Name)
+	isNotCopyOutput := ps.Store["@type"] != "copy"
 
+	// We must consider the tag when the output is a Copy one
+	// as copy is a "flag" output: it can exist identical outputs with different tag
 	for k, v := range ps.Store {
-		if k == "@id" || k == "tag" {
+		if k == "@id" || (k == "tag" && isNotCopyOutput) {
 			continue
 		}
 		c.Store[k] = v
 	}
+
+	// Custom plugins don't have stored properties but only contain the config
+	// as plain text.
+	// Set the content here to avoid generating the same hash code for all
+	// custom plugins resulting in only one custom plugin being ever set for
+	// one config.
+	c.Content = ps.Content
 
 	c.InsertChilds(ps.Childs...)
 	return utils.HashCode(c.String())

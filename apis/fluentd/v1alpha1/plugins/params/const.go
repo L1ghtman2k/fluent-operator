@@ -50,6 +50,8 @@ const (
 	HttpInputType    InputType = "http"
 	ForwardInputType InputType = "forward"
 	TailInputType    InputType = "tail"
+	SampleInputType  InputType = "sample"
+	MonitorAgentType InputType = "monitor_agent"
 
 	// Enums the supported filter types
 	RecordTransformerFilterType FilterType = "record_transformer"
@@ -68,6 +70,7 @@ const (
 	LokiOutputType          OutputType = "loki"
 	CloudWatchOutputType    OutputType = "cloudwatch_logs"
 	DatadogOutputType       OutputType = "datadog"
+	CopyOutputType          OutputType = "copy"
 )
 
 var (
