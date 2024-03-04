@@ -19,7 +19,7 @@ on:
       - "Makefile"
 
 env:
-  REGISTRY_REPO: 'l1ghtman2k'
+  REGISTRY_REPO: 'l1ghtman'
 
 jobs:
   operator-build:
