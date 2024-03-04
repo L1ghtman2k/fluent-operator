@@ -70,7 +70,7 @@ fluentbit:
   crdsEnable: true
   enable: true
   image:
-    repository: "l1ghtman/fluent-bit"
+    repository: "kubesphere/fluent-bit"
     tag: "v2.1.8"
   # fluentbit resources. If you do want to specify resources, adjust them as necessary
   # You can adjust it based on the log volume.
