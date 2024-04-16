@@ -3,7 +3,7 @@ name: Building Fluent Operator image
 on:
   push:
     branches:
-      - 'master'
+      - 'image'
     tags:
       - 'v*'
     paths:
@@ -19,7 +19,7 @@ on:
       - "Makefile"
 
 env:
-  REGISTRY_REPO: 'kubesphere'
+  REGISTRY_REPO: 'l1ghtman'
 
 jobs:
   operator-build:
